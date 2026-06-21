@@ -4,7 +4,7 @@ Plateforme cloud **mono-utilisateur** pour créer, stocker et exporter tes itin�
 Accessible depuis n'importe quel ordinateur ou téléphone, avec sauvegarde automatique.
 
 ## Ce qu'elle fait
-- Connexion par lien magique (email) — **un seul compte, le tien**.
+- **Connexion automatique** à un compte fixe (`contact@parisandko.com`) — aucune page de login, aucune limite d'emails.
 - **Itinéraires** : liste, création, éditeur complet (couverture, journées, activités, multi-destinations, hôtel par étape), **sauvegarde automatique** en base.
 - **Bibliothèque** (hôtels / activités / restaurants), filtrable par type et région, modifiable.
 - **Clients** : carnet d'adresses.
@@ -17,27 +17,31 @@ Accessible depuis n'importe quel ordinateur ou téléphone, avec sauvegarde auto
 
 ## Déploiement — marche à suivre
 
-### 1) Base de données (Supabase)
+### 1) Base de données + compte fixe (Supabase)
 1. Crée un projet sur supabase.com.
-2. **SQL Editor** → colle `../schema.sql` → **Run**. (C'est tout, aucune équipe à configurer.)
-3. **Authentication → URL Configuration → Redirect URLs** : ajoute
-   `http://localhost:3000/auth/callback` (et plus tard ton URL Vercel + `/auth/callback`).
+2. **SQL Editor** → colle `../schema.sql` → **Run**.
+3. **Authentication → Users → Add user** : crée `contact@parisandko.com` avec un mot de passe,
+   et coche **« Auto Confirm User »**. (C'est ce compte que l'app utilisera, en connexion automatique.)
+4. **SQL Editor** → colle `../seed-library.sql` → **Run** (ta bibliothèque se charge sur ce compte).
+
+> Pas de page de login : l'app se connecte seule à ce compte (mot de passe côté serveur).
+> Aucune limite d'emails. La sécurité RLS reste active (données privées à ce compte).
 
 ### 2) Lancer en local
 ```bash
 cd parisko-app
 npm install
-cp .env.local.example .env.local      # puis remplis les clés (Supabase → Settings → API)
+cp .env.local.example .env.local      # puis remplis les valeurs
 npm run dev
 ```
-- Ouvre http://localhost:3000 → connecte-toi par email (lien magique) → tu es dans l'app.
-- **Charge ta bibliothèque** : Supabase → SQL Editor → colle `../seed-library.sql` → **Run**
-  (à faire après ta 1re connexion, pour que ton compte existe). Recharge la page Bibliothèque.
+Ouvre http://localhost:3000 → tu es directement dans l'app (connexion auto).
 
 `.env.local` à remplir :
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (secrète)
 - `NEXT_PUBLIC_SITE_URL=http://localhost:3000`
+- `APP_USER_EMAIL=contact@parisandko.com`
+- `APP_USER_PASSWORD=` (le mot de passe choisi à l'étape 3 — secret, côté serveur)
 
 > ⚠️ **Sécurité** : mets tes vraies clés UNIQUEMENT dans `.env.local` (ignoré par Git).
 > Ne mets jamais de vraie clé dans `.env.local.example` (lui est versionné → la clé `service_role` fuirait sur GitHub).
@@ -46,9 +50,9 @@ npm run dev
 ### 3) Mise en ligne (Vercel)
 1. Pousse le dossier `parisko-app` sur un dépôt GitHub.
 2. vercel.com → **New Project** → importe le dépôt.
-3. **Environment Variables** : mêmes clés, avec `NEXT_PUBLIC_SITE_URL=https://ton-app.vercel.app`.
-4. Déploie, puis ajoute `https://ton-app.vercel.app/auth/callback` dans les *Redirect URLs* Supabase.
-5. Connecte-toi sur l'URL Vercel → opérationnel partout.
+3. **Environment Variables** : mêmes valeurs qu'en local (dont `APP_USER_EMAIL` / `APP_USER_PASSWORD`),
+   avec `NEXT_PUBLIC_SITE_URL=https://ton-app.vercel.app` et `PUPPETEER_SKIP_DOWNLOAD=true`.
+4. Déploie → ouvre l'URL Vercel → opérationnel partout (connexion auto).
 
 ## Génération PDF serveur (Phase 3 — FAIT ✓)
 Bouton **« Télécharger le PDF »** dans l'éditeur → route `app/api/pdf/[id]/route.js` → Chrome headless →

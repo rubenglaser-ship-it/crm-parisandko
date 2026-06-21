@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from '@/app/actions';
 
 export default function TopNav() {
   const p = usePathname();
@@ -15,7 +14,6 @@ export default function TopNav() {
         <Link className={is('/library')} href="/library">Bibliothèque</Link>
       </nav>
       <div className="spacer" />
-      <form action={signOut}><button className="btn ghost">Déconnexion</button></form>
     </div>
   );
 }

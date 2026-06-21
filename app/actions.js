@@ -13,7 +13,7 @@ export async function signOut() {
 export async function createItinerary() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/auto');
   const { data, error } = await supabase
     .from('itineraries')
     .insert({ title: 'New itinerary', days: [] })

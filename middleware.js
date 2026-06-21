@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
-// Rafraîchit la session sur chaque requête et protège les pages privées
+// Mono-utilisateur sans page de login : si aucune session, on déclenche
+// la connexion automatique au compte fixe (/api/auth/auto), puis on revient.
 export async function middleware(request) {
   let response = NextResponse.next({ request });
 
@@ -24,16 +25,12 @@ export async function middleware(request) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
-  const isAuthPage = path.startsWith('/login') || path.startsWith('/auth');
 
-  if (!user && !isAuthPage) {
+  // ne pas boucler sur la route d'auto-login
+  if (!user && !path.startsWith('/api/auth/auto')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-  if (user && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
+    url.pathname = '/api/auth/auto';
+    url.searchParams.set('next', path + (request.nextUrl.search || ''));
     return NextResponse.redirect(url);
   }
   return response;
