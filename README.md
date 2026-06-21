@@ -36,8 +36,12 @@ npm run dev
 
 `.env.local` à remplir :
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (secrète — utile seulement pour le PDF serveur, Phase 3)
+- `SUPABASE_SERVICE_ROLE_KEY` (secrète)
 - `NEXT_PUBLIC_SITE_URL=http://localhost:3000`
+
+> ⚠️ **Sécurité** : mets tes vraies clés UNIQUEMENT dans `.env.local` (ignoré par Git).
+> Ne mets jamais de vraie clé dans `.env.local.example` (lui est versionné → la clé `service_role` fuirait sur GitHub).
+> Si tu l'as déjà fait, régénère la clé dans Supabase → Settings → API.
 
 ### 3) Mise en ligne (Vercel)
 1. Pousse le dossier `parisko-app` sur un dépôt GitHub.
@@ -46,12 +50,17 @@ npm run dev
 4. Déploie, puis ajoute `https://ton-app.vercel.app/auth/callback` dans les *Redirect URLs* Supabase.
 5. Connecte-toi sur l'URL Vercel → opérationnel partout.
 
-## Phase 3 — Génération PDF serveur (à venir)
-Bouton « Télécharger PDF » renvoyant un PDF parfait **sans aucun réglage navigateur**.
-Route `app/api/pdf/[id]/route.js` → rend l'itinéraire → Chrome headless :
-- local/worker : `puppeteer` (cf. `../export-pdf.js`)
-- Vercel : `puppeteer-core` + `@sparticuz/chromium`
-En attendant, « Exporter / Imprimer » fait déjà un PDF propre (coche « Graphiques d'arrière-plan », décoche « En-têtes et pieds de page »).
+## Génération PDF serveur (Phase 3 — FAIT ✓)
+Bouton **« Télécharger le PDF »** dans l'éditeur → route `app/api/pdf/[id]/route.js` → Chrome headless →
+PDF parfait **sans aucun réglage navigateur** (couleurs, multi-pages, pas d'en-tête/URL, texte sélectionnable).
+- **En local** : utilise `puppeteer` (Chromium embarqué, installé via `npm install`).
+- **Sur Vercel** : utilise `puppeteer-core` + `@sparticuz/chromium` (détection automatique).
+
+**Réglage Vercel pour la route PDF :**
+- Variables d'env : ajoute `PUPPETEER_SKIP_DOWNLOAD=true` (évite que Vercel télécharge le gros Chromium de `puppeteer` au build ; en prod c'est `@sparticuz/chromium` qui sert).
+- Si la route renvoie une erreur de mémoire, augmente la mémoire de la fonction (Project Settings → Functions).
+
+Le bouton « Imprimer (aperçu navigateur) » reste disponible en secours.
 
 ## Structure
 ```

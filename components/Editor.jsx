@@ -111,8 +111,9 @@ export default function Editor({ initial, library, clients }) {
           <button onClick={() => addDay(false)}>＋ Journée</button>
           <button onClick={() => addDay(true)}>＋ Destination</button>
         </div>
-        <button className="btn primary" style={{ width: '100%', marginTop: 14 }} onClick={() => window.print()}>⎙ Exporter / Imprimer PDF</button>
-        <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>Astuce : coche « Graphiques d'arrière-plan » et décoche « En-têtes et pieds de page » dans l'impression.</p>
+        <a className="btn primary" style={{ width: '100%', marginTop: 14, textAlign: 'center' }} href={`/api/pdf/${initial.id}`} target="_blank" rel="noreferrer">⬇ Télécharger le PDF</a>
+        <button className="btn ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => window.print()}>⎙ Imprimer (aperçu navigateur)</button>
+        <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>« Télécharger le PDF » génère un fichier propre côté serveur (couleurs, sans en-tête). Pense à enregistrer (auto) avant.</p>
       </div>
 
       {/* PREVIEW (= print) */}
