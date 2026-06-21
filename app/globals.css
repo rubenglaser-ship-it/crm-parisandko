@@ -63,14 +63,16 @@ a{color:inherit}
 .cover .meta b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);font-weight:700;margin-bottom:3px}
 .hero{height:230px;background-size:cover;background-position:center;background:linear-gradient(135deg,#e3f0ec,#f3e7cf);margin-top:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:12px}
 .intro{padding:26px 60px 4px;font-family:var(--serif);font-size:18px;line-height:1.6;color:var(--teal-deep);text-align:center;font-style:italic}
-.leg{padding:24px 60px 0;text-align:center}
-.leg>span{display:inline-block;font-family:var(--serif);font-size:22px;letter-spacing:.22em;text-transform:uppercase;color:#fff;background:var(--teal);border-radius:6px;padding:10px 30px}
-.leg-hotel{font-size:12px;color:var(--gold);margin-top:8px}
-.hotel-line{padding:14px 60px 0;font-size:12px;color:var(--gold)}
-.day{padding:30px 60px;border-top:1px solid var(--line)}
-.day-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid var(--sky)}
+/* destination : un seul encadré épuré (pas de boîte hôtel séparée) */
+.leg{padding:30px 60px 4px;text-align:center}
+.leg .dest{display:inline-block;font-family:var(--serif);font-size:23px;letter-spacing:.2em;text-transform:uppercase;color:var(--teal-deep);padding-bottom:7px;border-bottom:2px solid var(--gold-soft)}
+.stay{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:9px}
+.stay.stay-line{padding:12px 60px 0;text-align:center}
+.stay-lbl{font-weight:700;color:var(--teal);border:1px solid var(--gold-soft);border-radius:20px;padding:1px 8px;margin-right:7px;letter-spacing:.08em}
+.day{padding:26px 60px;border-top:1px solid var(--line)}
+.day-head{display:flex;align-items:baseline;gap:14px;margin-bottom:16px;padding-bottom:9px;border-bottom:2px solid var(--sky)}
 .day-num{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--teal);padding:4px 10px;border-radius:20px;align-self:center}
-.day-title{font-family:var(--serif);font-size:30px;font-weight:500;margin:0;flex:1;color:var(--teal-deep)}
+.day-title{font-family:var(--serif);font-size:23px;font-weight:500;margin:0;flex:1;color:var(--teal-deep)}
 .day-date{font-size:12px;color:var(--gold);font-weight:600}
 .item{display:flex;gap:18px;padding:14px 0;border-bottom:1px dashed var(--line);position:relative;cursor:pointer}
 .item:last-child{border-bottom:none}
@@ -79,8 +81,18 @@ a{color:inherit}
 .item .body{flex:1}
 .item .it-title{font-family:var(--serif);font-size:20px;font-weight:500;margin:0 0 3px;display:flex;align-items:center;gap:8px}
 .item .it-desc{font-size:13px;color:var(--ink-soft);line-height:1.55}
-.item .it-addr{font-size:11.5px;color:var(--gold);margin-top:4px}
+.item .it-addr{font-size:11.5px;color:var(--gold);margin-top:5px;font-style:italic;padding-left:11px;border-left:2px solid var(--gold-soft)}
+.item .it-addr a{text-decoration:none;color:var(--gold)}
 .item img.it-img{width:150px;height:104px;object-fit:cover;border-radius:6px}
+
+/* champs libres : texte, image, transport */
+.note{position:relative;margin:8px 0;padding:14px 18px;font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.5;color:var(--teal-deep);background:var(--sky);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;cursor:pointer}
+.free-img{margin:12px 0;text-align:center;cursor:pointer}
+.free-img img{max-width:100%;border-radius:8px;display:inline-block}
+.free-img .img-ph{border:1.5px dashed var(--gold-soft);border-radius:8px;padding:24px;color:#a8966c;font-size:12px}
+.transport{position:relative;display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.transport .tp-tag{font-size:9px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:#fff;background:var(--blue);border-radius:20px;padding:3px 10px;white-space:nowrap}
+.transport .tp-text{font-size:13.5px;color:var(--blue);font-weight:500}
 .badge-meal{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--gold);border-radius:20px;padding:2px 9px;font-weight:600}
 .badge-meal.m-Breakfast{background:var(--amber)} .badge-meal.m-Lunch{background:var(--teal)}
 .badge-meal.m-Dinner{background:var(--burgundy)} .badge-meal.m-Shabbat{background:var(--blue)}

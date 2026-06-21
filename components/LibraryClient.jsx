@@ -90,13 +90,15 @@ export default function LibraryClient({ initial }) {
         );
       })}
 
-      {edit && <EditModal entry={edit} onClose={() => setEdit(null)} onSave={save} />}
+      {edit && <EditModal entry={edit} cities={[...new Set(items.map((i) => i.city).filter(Boolean))].sort((a, b) => a.localeCompare(b))} onClose={() => setEdit(null)} onSave={save} />}
     </>
   );
 }
 
-function EditModal({ entry, onClose, onSave }) {
+function EditModal({ entry, cities, onClose, onSave }) {
   const [e, setE] = useState(entry);
+  // si la ville de l'élément n'est pas dans la liste connue, on démarre en mode "nouvelle ville"
+  const [newCity, setNewCity] = useState(!!entry.city && !cities.includes(entry.city));
   const up = (k) => (ev) => setE({ ...e, [k]: ev.target.value });
   return (
     <div className="modal-bg" onClick={(ev) => ev.target.classList.contains('modal-bg') && onClose()}>
@@ -110,7 +112,17 @@ function EditModal({ entry, onClose, onSave }) {
         <div className="field"><label>Nom</label><input value={e.title || ''} onChange={up('title')} /></div>
         <div className="field"><label>Description (s'affiche sous l'activité)</label><textarea value={e.description || ''} onChange={up('description')} /></div>
         <div className="row2">
-          <div className="field"><label>Ville / Région</label><input value={e.city || ''} onChange={up('city')} placeholder="Paris, Cannes, Rome…" /></div>
+          <div className="field"><label>Ville</label>
+            {newCity ? (
+              <input value={e.city || ''} autoFocus placeholder="Nouvelle ville (ex: Rome)" onChange={up('city')} />
+            ) : (
+              <select value={e.city || ''} onChange={(ev) => { if (ev.target.value === '__new') { setNewCity(true); setE({ ...e, city: '' }); } else setE({ ...e, city: ev.target.value }); }}>
+                <option value="">— choisir —</option>
+                {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="__new">➕ Nouvelle ville…</option>
+              </select>
+            )}
+          </div>
           <div className="field"><label>Adresse</label><input value={e.address || ''} onChange={up('address')} /></div>
         </div>
         {e.kind === 'restaurant' && (

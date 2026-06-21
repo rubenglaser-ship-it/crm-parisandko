@@ -218,6 +218,7 @@ function renderDays(days, h) {
           <button onClick={() => h.openPicker('activity', day.id)}>＋ Activité</button>
           <button onClick={() => h.openPicker('restaurant', day.id)}>＋ Restaurant</button>
           <button onClick={() => h.openPicker('hotel', day.id)}>＋ Hôtel</button>
+          <button onClick={() => h.addItem(day.id, { type: 'activity', title: 'New item', time: '' })}>＋ Activité libre</button>
           <button onClick={() => h.addItem(day.id, { type: 'transport', title: 'Private driver — full day' })}>＋ Driver</button>
           <button onClick={() => h.addItem(day.id, { type: 'note', title: '', description: '' })}>＋ Texte</button>
           <button onClick={() => h.addItem(day.id, { type: 'image', title: '', image: '', width: 100 })}>＋ Image</button>
