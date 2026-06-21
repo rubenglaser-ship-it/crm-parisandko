@@ -12,6 +12,7 @@ export default function TopNav() {
         <Link className={is('/')} href="/">Itinéraires</Link>
         <Link className={is('/clients')} href="/clients">Clients</Link>
         <Link className={is('/library')} href="/library">Bibliothèque</Link>
+        <Link className={is('/media')} href="/media">Médiathèque</Link>
       </nav>
       <div className="spacer" />
     </div>

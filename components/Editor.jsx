@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { regionOf } from '@/components/LibraryClient';
+import ImageInput from '@/components/ImageInput';
+import RichInput from '@/components/RichInput';
+import { mdToHtml } from '@/lib/richtext';
 
 const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : 'i' + Math.random().toString(36).slice(2));
 const REGIONS = ['Paris', 'French Riviera', 'Provence', 'Normandy', 'Europe', 'Autre'];
@@ -122,8 +125,8 @@ export default function Editor({ initial, library, clients }) {
           <div className="field"><label>Départ</label><input type="date" value={doc.endDate || ''} onChange={(e) => set({ endDate: e.target.value })} /></div>
         </div>
         <button className="btn ghost" style={{ width: '100%' }} onClick={generateDays}>＋ Générer une journée par nuit</button>
-        <div className="field" style={{ marginTop: 12 }}><label>Image de couverture (URL)</label><input value={doc.heroImage} onChange={(e) => set({ heroImage: e.target.value })} /></div>
-        <div className="field"><label>Introduction</label><textarea value={doc.intro} onChange={(e) => set({ intro: e.target.value })} /></div>
+        <div style={{ marginTop: 12 }}><ImageInput label="Image de couverture" value={doc.heroImage} onChange={(url) => set({ heroImage: url })} /></div>
+        <div className="field"><label>Introduction</label><RichInput value={doc.intro} onChange={(v) => set({ intro: v })} placeholder="A tailor-made journey…" /></div>
         <div className="daybar"><button onClick={() => addDay(false)}>＋ Journée</button><button onClick={() => addDay(true)}>＋ Destination / étape</button></div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
@@ -147,7 +150,7 @@ export default function Editor({ initial, library, clients }) {
             </div>
             <div className="hero" style={doc.heroImage ? { backgroundImage: `url('${doc.heroImage}')` } : undefined}>{doc.heroImage ? '' : 'Cover image'}</div>
           </div>
-          <div className="intro">{doc.intro || 'A warm welcome to your bespoke journey…'}</div>
+          <div className="intro" dangerouslySetInnerHTML={{ __html: doc.intro ? mdToHtml(doc.intro) : 'A warm welcome to your bespoke journey…' }} />
           {renderDays(doc.days, handlers)}
           <div className="footer-doc">
             <div className="fl">JEWISH CONCIERGE — PARIS &amp; KO</div>
@@ -238,7 +241,9 @@ function ItemRow({ it, di, ii, h }) {
     </div>
   );
   if (it.type === 'note') return (
-    <div className="note" onClick={() => h.openItem(di, ii)}>{it.description || 'Texte libre…'}{ctrls}</div>
+    <div className={'note f-' + (it.font || 'serif') + ' s-' + (it.size || 'm')} onClick={() => h.openItem(di, ii)}>
+      <span dangerouslySetInnerHTML={{ __html: it.description ? mdToHtml(it.description) : 'Texte libre…' }} />{ctrls}
+    </div>
   );
   if (it.type === 'image') return (
     <div className="free-img" onClick={() => h.openItem(di, ii)} style={{ position: 'relative' }}>
@@ -257,7 +262,7 @@ function ItemRow({ it, di, ii, h }) {
       <div className="time">{it.time || ''}</div>
       <div className="body">
         <h3 className={'it-title' + (isPH(it.title) ? ' ph' : '')}><span>{it.title}</span>{ml && (it.title || '').toLowerCase() !== ml.toLowerCase() && <span className={'badge-meal m-' + ml.replace(/\s/g, '')}>{ml}</span>}</h3>
-        {it.description && <div className="it-desc">{it.description}</div>}
+        {it.description && <div className="it-desc" dangerouslySetInnerHTML={{ __html: mdToHtml(it.description) }} />}
         {it.image && <img className="it-img" src={it.image} alt="" />}
         {it.address && <div className="it-addr"><a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(it.address)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{it.address}</a></div>}
       </div>
@@ -306,12 +311,20 @@ function ItemModal({ it, onSave, onRemove, onClose }) {
       <div className="modal">
         <h3>{type === 'note' ? 'Texte libre' : type === 'image' ? 'Image' : type === 'transport' ? 'Transport / chauffeur' : 'Modifier l\'élément'}</h3>
 
-        {type === 'note' && (
-          <div className="field"><label>Message</label><textarea value={v.description || ''} onChange={up('description')} autoFocus style={{ minHeight: 90 }} /></div>
-        )}
+        {type === 'note' && (<>
+          <div className="field"><label>Message</label><RichInput value={v.description || ''} onChange={(t) => setV({ ...v, description: t })} minHeight={100} /></div>
+          <div className="row2">
+            <div className="field"><label>Police</label>
+              <select value={v.font || 'serif'} onChange={up('font')}><option value="serif">Élégante (serif)</option><option value="sans">Moderne (sans)</option></select>
+            </div>
+            <div className="field"><label>Taille</label>
+              <select value={v.size || 'm'} onChange={up('size')}><option value="s">Petite</option><option value="m">Normale</option><option value="l">Grande</option></select>
+            </div>
+          </div>
+        </>)}
 
         {type === 'image' && (<>
-          <div className="field"><label>Image (URL)</label><input value={v.image || ''} onChange={up('image')} autoFocus /></div>
+          <ImageInput label="Image" value={v.image || ''} onChange={(url) => setV({ ...v, image: url })} />
           <div className="field"><label>Largeur : {v.width || 100}%</label>
             <input type="range" min="25" max="100" step="5" value={v.width || 100} onChange={(e) => setV({ ...v, width: Number(e.target.value) })} style={{ width: '100%' }} />
           </div>
@@ -332,9 +345,9 @@ function ItemModal({ it, onSave, onRemove, onClose }) {
             </div>
           </div>
           <div className="field"><label>Titre</label><input value={v.title || ''} onChange={up('title')} /></div>
-          <div className="field"><label>Description</label><textarea value={v.description || ''} onChange={up('description')} /></div>
+          <div className="field"><label>Description</label><RichInput value={v.description || ''} onChange={(t) => setV({ ...v, description: t })} /></div>
           <div className="field"><label>Adresse</label><input value={v.address || ''} onChange={up('address')} onBlur={(e) => setV({ ...v, address: fmtAddr(e.target.value) })} /></div>
-          <div className="field"><label>Image (URL, optionnel)</label><input value={v.image || ''} onChange={up('image')} /></div>
+          <ImageInput label="Image (optionnel)" value={v.image || ''} onChange={(url) => setV({ ...v, image: url })} />
         </>)}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14 }}>
