@@ -36,13 +36,22 @@ export async function GET(_req, { params }) {
     itin.client_name = c?.name || '';
   }
 
-  const html = buildItineraryHtml(itin);
+  // buildItineraryHtml est async : résout les images en data URI + embarque les fonts locales
+  const html = await buildItineraryHtml(itin);
 
   let browser;
   try {
     browser = await getBrowser();
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    // Timeout global : 45s (sous le maxDuration: 60 de la fonction Vercel)
+    page.setDefaultNavigationTimeout(45_000);
+    page.setDefaultTimeout(45_000);
+
+    // Tout le contenu est inline (fonts base64, images data URI) → pas de réseau nécessaire.
+    // 'domcontentloaded' évite les blocages sur les ressources externes résiduelles.
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -50,14 +59,21 @@ export async function GET(_req, { params }) {
       margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' },
       preferCSSPageSize: false,
     });
-    const name = (itin.client_name || itin.title || 'itineraire').replace(/[^\w\s-]/g, '').trim() || 'itineraire';
+
+    // Nom de fichier UTF-8 via RFC 5987 — préserve accents et caractères français
+    const rawName = (itin.client_name || itin.title || 'itineraire').trim() || 'itineraire';
+    const safeName = rawName.replace(/[/\\:*?"<>|]/g, '-');
+    const fullName = `${safeName} - Paris&Ko.pdf`;
+    const encoded  = encodeURIComponent(fullName);
+
     return new Response(Buffer.from(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${name} - Paris&Ko.pdf"`,
+        'Content-Disposition': `attachment; filename="${fullName}"; filename*=UTF-8''${encoded}`,
       },
     });
   } catch (e) {
+    console.error('[PDF] Puppeteer error:', e);
     return new Response('PDF error: ' + (e?.message || e), { status: 500 });
   } finally {
     if (browser) await browser.close();
