@@ -41,6 +41,11 @@ NEXT_PUBLIC_SITE_URL=https://<ton-app>.up.railway.app
 - Le code détecte automatiquement l'environnement (Railway / Vercel / local) — aucune action de ta part.
 
 ## Dépannage
+- **Crash-loop « Ready » puis « Stopping / SIGTERM » en boucle** : c'est le **healthcheck** qui échoue → Railway tue le conteneur et recommence.
+  - Le healthcheck doit pointer sur **`/api/health`** (Settings → Deploy → *Health Check Path*). Cette route renvoie « ok » **sans passer par le middleware ni Supabase** (exclue volontairement).
+  - Vérifie aussi *Health Check Timeout* (≥ 100 s) et que `PORT` n'est pas surchargé manuellement (Railway le fournit).
+  - Si après ça l'app reste up mais les pages renvoient 500 → ce sont les **variables Supabase** : regarde les logs (un message `✗ ABSENTE` s'affiche si une clé manque).
+
 - **PDF en erreur 500** : vérifie les logs Railway. Souvent une lib Chromium manquante →
   le Dockerfile les installe déjà ; si un message cite une `.so` manquante, ajoute le paquet `apt` correspondant.
 - **Build qui télécharge un gros Chromium** : c'est évité par `PUPPETEER_SKIP_DOWNLOAD=true` (déjà dans le Dockerfile).

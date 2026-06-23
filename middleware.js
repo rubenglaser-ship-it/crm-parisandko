@@ -23,19 +23,24 @@ export async function middleware(request) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
-
-  // ne pas boucler sur la route d'auto-login ; laisser passer le healthcheck Railway
-  if (!user && !path.startsWith('/api/auth/auto') && !path.startsWith('/api/health')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/api/auth/auto';
-    url.searchParams.set('next', path + (request.nextUrl.search || ''));
-    return NextResponse.redirect(url);
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    // ne pas boucler sur la route d'auto-login ; laisser passer le healthcheck Railway
+    if (!user && !path.startsWith('/api/auth/auto') && !path.startsWith('/api/health')) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/api/auth/auto';
+      url.searchParams.set('next', path + (request.nextUrl.search || ''));
+      return NextResponse.redirect(url);
+    }
+  } catch (e) {
+    // le middleware ne doit JAMAIS faire tomber une requête : on laisse passer.
+    console.error('[middleware] auth check error:', e?.message || e);
   }
   return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // /api/health est exclu : le healthcheck Railway ne dépend ni du middleware ni de Supabase.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
