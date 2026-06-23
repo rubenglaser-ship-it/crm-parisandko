@@ -49,12 +49,14 @@ Ouvre http://localhost:3000 → tu es directement dans l'app (connexion auto).
 > Ne mets jamais de vraie clé dans `.env.local.example` (lui est versionné → la clé `service_role` fuirait sur GitHub).
 > Si tu l'as déjà fait, régénère la clé dans Supabase → Settings → API.
 
-### 3) Mise en ligne (Vercel)
-1. Pousse le dossier `parisko-app` sur un dépôt GitHub.
-2. vercel.com → **New Project** → importe le dépôt.
-3. **Environment Variables** : mêmes valeurs qu'en local (dont `APP_USER_EMAIL` / `APP_USER_PASSWORD`),
-   avec `NEXT_PUBLIC_SITE_URL=https://ton-app.vercel.app` et `PUPPETEER_SKIP_DOWNLOAD=true`.
-4. Déploie → ouvre l'URL Vercel → opérationnel partout (connexion auto).
+### 3) Mise en ligne — **Railway** (recommandé)
+Voir le guide détaillé **`RAILWAY.md`**. En résumé :
+1. Pousse le dépôt sur GitHub.
+2. railway.app → **New Project → Deploy from GitHub repo** → Railway construit le `Dockerfile` (Chromium inclus). **Aucun Docker local requis.**
+3. Renseigne les variables d'env (mêmes qu'en local + `NEXT_PUBLIC_SITE_URL=https://<app>.up.railway.app`).
+4. Génère un domaine → `/api/health` doit répondre **ok** → l'app est en ligne.
+
+*(Vercel reste possible — serverless via `@sparticuz/chromium` — mais Railway est plus simple pour Puppeteer.)*
 
 ## Génération PDF serveur (Phase 3 — FAIT ✓)
 Bouton **« Télécharger le PDF »** dans l'éditeur → route `app/api/pdf/[id]/route.js` → Chrome headless →

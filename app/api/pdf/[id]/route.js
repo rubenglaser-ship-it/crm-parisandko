@@ -6,6 +6,17 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 async function getBrowser() {
+  // Railway / Docker / VPS : Chromium système installé dans l'image.
+  // On lance puppeteer-core avec le binaire fourni (pas de Chromium embarqué).
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    const puppeteer = await import('puppeteer-core');
+    return puppeteer.launch({
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none'],
+      headless: 'new',
+    });
+  }
+  // Vercel (serverless) : Chromium via @sparticuz/chromium.
   const onVercel = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_VERSION;
   if (onVercel) {
     const chromium = (await import('@sparticuz/chromium')).default;
@@ -17,7 +28,7 @@ async function getBrowser() {
       headless: chromium.headless,
     });
   }
-  // local : puppeteer complet (Chromium embarqué)
+  // Dev local : puppeteer complet (Chromium embarqué).
   const puppeteer = await import('puppeteer');
   return puppeteer.launch({ headless: 'new' });
 }

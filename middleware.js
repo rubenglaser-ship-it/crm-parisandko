@@ -26,8 +26,8 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
-  // ne pas boucler sur la route d'auto-login
-  if (!user && !path.startsWith('/api/auth/auto')) {
+  // ne pas boucler sur la route d'auto-login ; laisser passer le healthcheck Railway
+  if (!user && !path.startsWith('/api/auth/auto') && !path.startsWith('/api/health')) {
     const url = request.nextUrl.clone();
     url.pathname = '/api/auth/auto';
     url.searchParams.set('next', path + (request.nextUrl.search || ''));

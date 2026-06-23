@@ -34,9 +34,9 @@ export default function Editor({ initial, library, clients }) {
   const [itemEdit, setItemEdit] = useState(null);
   const [saved, setSaved] = useState('saved');
   const timer = useRef(null);
-  // clients (modifiables : création rapide depuis l'itinéraire)
+  // clients — démarre en mode "nouveau client" si aucun client n'est lié à cet itinéraire
   const [clientList, setClientList] = useState(clients);
-  const [clientMode, setClientMode] = useState('select');
+  const [clientMode, setClientMode] = useState(initial.client_id ? 'select' : 'new');
   const [newClientName, setNewClientName] = useState('');
   // génération de journées : nombre de jours calendaires (arrivée → départ inclus), éditable
   const calDays = (initial.start_date && initial.end_date) ? Math.round((new Date(initial.end_date) - new Date(initial.start_date)) / 864e5) + 1 : 1;
