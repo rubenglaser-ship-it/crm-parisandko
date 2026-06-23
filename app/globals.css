@@ -46,8 +46,11 @@ a{color:inherit}
 .card:hover{border-color:var(--gold);box-shadow:0 8px 24px rgba(30,25,15,.08)}
 .card h3{margin:0 0 4px;font-family:var(--serif);font-size:19px;color:var(--teal-deep)}
 .card-wrap{position:relative}
+.card-dup{position:absolute;top:8px;right:36px;width:24px;height:24px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:var(--teal);font-size:12px;opacity:0;transition:.12s}
+.card-dup:hover{border-color:var(--teal);background:var(--sky)}
+.card-dup:disabled{cursor:default;opacity:.4}
 .card-del{position:absolute;top:8px;right:8px;width:24px;height:24px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:#a33;font-size:12px;opacity:0;transition:.12s}
-.card-wrap:hover .card-del{opacity:1}
+.card-wrap:hover .card-dup,.card-wrap:hover .card-del{opacity:1}
 .card .meta{font-size:12px;color:var(--ink-soft)}
 .tag-pill{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:20px;background:var(--sky);color:var(--teal)}
 .field{margin-bottom:12px}

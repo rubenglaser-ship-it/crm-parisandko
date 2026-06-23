@@ -24,6 +24,7 @@ Accessible depuis n'importe quel ordinateur ou téléphone, avec sauvegarde auto
    et coche **« Auto Confirm User »**. (C'est ce compte que l'app utilisera, en connexion automatique.)
 4. **SQL Editor** → colle `../seed-library.sql` → **Run** (ta bibliothèque se charge sur ce compte).
 5. **SQL Editor** → colle `../storage.sql` → **Run** (active l'upload d'images : crée le bucket `images` public + droits). Tu peux alors téléverser des photos depuis ton ordinateur, stockées dans Supabase.
+6. **SQL Editor** → colle `../migration-templates.sql` → **Run** (active les **modèles** d'itinéraires réutilisables).
 
 > Pas de page de login : l'app se connecte seule à ce compte (mot de passe côté serveur).
 > Aucune limite d'emails. La sécurité RLS reste active (données privées à ce compte).

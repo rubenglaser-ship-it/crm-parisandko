@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useTransition } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { saveAsTemplate } from '@/app/actions';
 import { regionOf } from '@/components/LibraryClient';
 import ImageInput from '@/components/ImageInput';
 import RichInput from '@/components/RichInput';
@@ -40,6 +41,7 @@ export default function Editor({ initial, library, clients }) {
   // génération de journées : nombre de jours calendaires (arrivée → départ inclus), éditable
   const calDays = (initial.start_date && initial.end_date) ? Math.round((new Date(initial.end_date) - new Date(initial.start_date)) / 864e5) + 1 : 1;
   const [genCount, setGenCount] = useState(calDays);
+  const [tplPending, startTpl] = useTransition();
 
   const save = useCallback(async (d) => {
     setSaved('saving');
@@ -66,6 +68,18 @@ export default function Editor({ initial, library, clients }) {
       if (n > 0) setGenCount(n);
     }
   }, [doc.startDate, doc.endDate]);
+
+  // Garde-fou : bloque la fermeture d'onglet si une sauvegarde est en attente
+  useEffect(() => {
+    const onBeforeUnload = (e) => {
+      if (saved === 'dirty' || saved === 'saving') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [saved]);
 
   async function createNewClient() {
     const name = newClientName.trim();
@@ -172,7 +186,10 @@ export default function Editor({ initial, library, clients }) {
           <a className="btn primary" style={{ flex: 2, textAlign: 'center' }} href={`/api/pdf/${initial.id}`} target="_blank" rel="noreferrer">⬇ Télécharger le PDF</a>
         </div>
         <button className="btn ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => window.print()}>Imprimer (aperçu)</button>
-        <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>Sauvegarde automatique. « Télécharger le PDF » génère un fichier propre côté serveur.</p>
+        <button className="btn ghost" style={{ width: '100%', marginTop: 8 }} disabled={tplPending} onClick={() => startTpl(() => saveAsTemplate(initial.id))}>
+          {tplPending ? '…' : '★ Enregistrer comme modèle'}
+        </button>
+        <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>Sauvegarde automatique. « Modèle » crée un itinéraire type réutilisable (sans client ni dates).</p>
       </div>
 
       <div className="editor-main">
