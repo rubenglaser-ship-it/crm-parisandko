@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { saveAsTemplate } from '@/app/actions';
 import { regionOf } from '@/components/LibraryClient';
 import ImageInput from '@/components/ImageInput';
+import ImageSlot from '@/components/ImageSlot';
 import RichInput from '@/components/RichInput';
 import { mdToHtml } from '@/lib/richtext';
 
@@ -138,7 +139,7 @@ export default function Editor({ initial, library, clients }) {
     setPicker(null);
   }
 
-  const handlers = { moveDay, removeDay, setDest, setHotel, openPicker: (kind, dayId) => setPicker({ kind, dayId }), addItem, openItem: (di, ii) => setItemEdit({ di, ii }), moveItem, removeItem };
+  const handlers = { moveDay, removeDay, setDest, setHotel, openPicker: (kind, dayId) => setPicker({ kind, dayId }), addItem, openItem: (di, ii) => setItemEdit({ di, ii }), moveItem, removeItem, updateItem };
 
   return (
     <div className="itin-layout">
@@ -301,8 +302,12 @@ function ItemRow({ it, di, ii, h }) {
     </div>
   );
   if (it.type === 'image') return (
-    <div className="free-img" onClick={() => h.openItem(di, ii)} style={{ position: 'relative' }}>
-      {it.image ? <img src={it.image} alt="" style={{ width: (it.width || 100) + '%' }} /> : <div className="img-ph">Image (clique pour ajouter une URL)</div>}{ctrls}
+    <div className="free-img" style={{ position: 'relative' }}>
+      {it.image
+        ? <img src={it.image} alt="" style={{ width: (it.width || 100) + '%' }} onClick={() => h.openItem(di, ii)} />
+        : <ImageSlot value={it.image} onChange={(url) => h.updateItem(di, ii, { image: url })} />}
+      {it.image && <button className="free-img-edit no-print" title="Taille / remplacer" onClick={() => h.openItem(di, ii)}>Taille</button>}
+      {ctrls}
     </div>
   );
   if (it.type === 'transport') return (
@@ -318,9 +323,9 @@ function ItemRow({ it, di, ii, h }) {
       <div className="body">
         <h3 className={'it-title' + (isPH(it.title) ? ' ph' : '')}><span>{it.title}</span>{ml && (it.title || '').toLowerCase() !== ml.toLowerCase() && <span className={'badge-meal m-' + ml.replace(/\s/g, '')}>{ml}</span>}</h3>
         {it.description && <div className="it-desc" dangerouslySetInnerHTML={{ __html: mdToHtml(it.description) }} />}
-        {it.image && <img className="it-img" src={it.image} alt="" />}
         {it.address && <div className="it-addr"><a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(it.address)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{it.address}</a></div>}
       </div>
+      <ImageSlot value={it.image} onChange={(url) => h.updateItem(di, ii, { image: url })} />
       {ctrls}
     </div>
   );

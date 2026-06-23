@@ -91,6 +91,18 @@ a{color:inherit}
 .item .it-addr a{text-decoration:none;color:var(--gold)}
 .item img.it-img{width:150px;height:104px;object-fit:cover;border-radius:6px}
 
+/* vignette image par item — 1 clic pour téléverser */
+.it-imgslot{position:relative;width:150px;min-width:150px;height:104px;border-radius:6px;overflow:hidden;flex:none;align-self:flex-start}
+.it-imgslot img{width:100%;height:100%;object-fit:cover;display:block}
+.it-imgslot.empty{border:1.5px dashed var(--gold-soft);background:var(--cream);display:flex;align-items:center;justify-content:center;gap:8px}
+.it-imgslot .slot-add{font-size:11px;color:var(--gold);background:none;border:none;cursor:pointer;font-weight:600}
+.it-imgslot .slot-lib{font-size:13px;color:var(--ink-soft);background:none;border:none;cursor:pointer}
+.it-imgslot .slot-actions{position:absolute;top:4px;right:4px;display:flex;gap:3px;opacity:0;transition:.12s}
+.it-imgslot:hover .slot-actions{opacity:1}
+.it-imgslot .slot-actions button{width:22px;height:20px;border:none;border-radius:5px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;cursor:pointer}
+.free-img-edit{position:absolute;top:6px;right:6px;font-size:10px;border:1px solid var(--line);background:#fff;border-radius:5px;cursor:pointer;opacity:0;padding:2px 6px}
+.free-img:hover .free-img-edit{opacity:1}
+
 /* champs libres : texte, image, transport */
 .note{position:relative;margin:8px 0;padding:14px 18px;font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.5;color:var(--teal-deep);background:var(--sky);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;cursor:pointer}
 .note.f-sans{font-family:var(--sans);font-style:normal}

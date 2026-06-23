@@ -23,8 +23,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Code + build
+# Code
 COPY . .
+# Polices Cormorant/Inter embarquées dans le PDF (réseau dispo au build Railway).
+# Non bloquant : si offline, le PDF retombe sur les polices système.
+RUN node scripts/download-fonts.js || echo "fonts: téléchargement ignoré (build hors-ligne)"
 RUN npm run build
 
 ENV NODE_ENV=production
