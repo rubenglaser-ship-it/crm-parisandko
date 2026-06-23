@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import TopNav from '@/components/TopNav';
 import { createItinerary } from '@/app/actions';
-import Link from 'next/link';
+import ItinCard from '@/components/ItinCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,12 +32,7 @@ export default async function Dashboard() {
 
         <div className="grid-cards">
           {(itineraries || []).map((it) => (
-            <Link key={it.id} className="card" href={`/itineraries/${it.id}`}>
-              <span className="tag-pill">{it.status === 'sent' ? 'Envoyé' : 'Brouillon'}</span>
-              <h3 style={{ marginTop: 8 }}>{it.title || 'Sans titre'}</h3>
-              <div className="meta">{dests(it)}</div>
-              <div className="meta" style={{ marginTop: 2 }}>{it.date_range || 'dates à définir'}</div>
-            </Link>
+            <ItinCard key={it.id} it={it} dests={dests(it)} />
           ))}
           {(!itineraries || itineraries.length === 0) && (
             <div className="muted">Aucun itinéraire pour l'instant. Clique « Nouvel itinéraire ».</div>

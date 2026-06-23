@@ -33,6 +33,13 @@ export default function Editor({ initial, library, clients }) {
   const [itemEdit, setItemEdit] = useState(null);
   const [saved, setSaved] = useState('saved');
   const timer = useRef(null);
+  // clients (modifiables : création rapide depuis l'itinéraire)
+  const [clientList, setClientList] = useState(clients);
+  const [clientMode, setClientMode] = useState('select');
+  const [newClientName, setNewClientName] = useState('');
+  // génération de journées : nombre de jours calendaires (arrivée → départ inclus), éditable
+  const calDays = (initial.start_date && initial.end_date) ? Math.round((new Date(initial.end_date) - new Date(initial.start_date)) / 864e5) + 1 : 1;
+  const [genCount, setGenCount] = useState(calDays);
 
   const save = useCallback(async (d) => {
     setSaved('saving');
@@ -51,6 +58,24 @@ export default function Editor({ initial, library, clients }) {
     timer.current = setTimeout(() => save(doc), 900);
     return () => clearTimeout(timer.current);
   }, [doc, save]);
+
+  // quand les dates changent, propose par défaut le nombre de jours réels (arrivée → départ inclus)
+  useEffect(() => {
+    if (doc.startDate && doc.endDate) {
+      const n = Math.round((new Date(doc.endDate) - new Date(doc.startDate)) / 864e5) + 1;
+      if (n > 0) setGenCount(n);
+    }
+  }, [doc.startDate, doc.endDate]);
+
+  async function createNewClient() {
+    const name = newClientName.trim();
+    if (!name) return;
+    const { data, error } = await supabase.from('clients').insert({ name }).select('id,name').single();
+    if (error) { alert('Erreur création client : ' + error.message); return; }
+    setClientList((l) => [...l, data].sort((a, b) => a.name.localeCompare(b.name)));
+    set({ clientId: data.id });
+    setClientMode('select'); setNewClientName('');
+  }
 
   const set = (patch) => setDoc((d) => ({ ...d, ...patch }));
   const setDays = (fn) => setDoc((d) => ({ ...d, days: fn(d.days) })); // sans impact dates
@@ -78,8 +103,7 @@ export default function Editor({ initial, library, clients }) {
   const setDest = (id) => { const v = prompt('Destination / étape :', ''); if (v !== null) setDays((days) => days.map((d) => d.id === id ? { ...d, dest: v.trim() } : d)); };
   const setHotel = (id) => { const cur = doc.days.find((d) => d.id === id)?.hotel || ''; const v = prompt('Hôtel (nom + adresse). Il s\'applique à partir de ce jour jusqu\'au prochain changement :', cur); if (v !== null) setDays((days) => fillHotelFrom(days, id, v.trim())); };
   function generateDays() {
-    if (!doc.startDate || !doc.endDate) { alert('Choisis d\'abord les dates'); return; }
-    const n = Math.round((new Date(doc.endDate) - new Date(doc.startDate)) / 864e5) + 1;
+    const n = Math.max(1, parseInt(genCount, 10) || 0);
     structuralDays((days) => { const a = [...days]; while (a.length < n) { const p = a[a.length - 1]; a.push({ id: uid(), title: 'New day', date: '', dest: p?.dest || '', hotel: p?.hotel || '', items: [] }); } return a; });
   }
 
@@ -110,9 +134,19 @@ export default function Editor({ initial, library, clients }) {
           <span className="muted" style={{ fontSize: 11 }}>{saved === 'saving' ? 'Enregistrement…' : saved === 'error' ? 'Erreur' : saved === 'dirty' ? '…' : 'Enregistré ✓'}</span>
         </div>
         <div className="field"><label>Client</label>
-          <select value={doc.clientId} onChange={(e) => set({ clientId: e.target.value })}>
-            <option value="">—</option>{clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          {clientMode === 'new' ? (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input value={newClientName} autoFocus placeholder="Nom du nouveau client" onChange={(e) => setNewClientName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createNewClient()} />
+              <button className="btn ghost" onClick={createNewClient}>Créer</button>
+              <button className="btn ghost" title="Annuler" onClick={() => { setClientMode('select'); setNewClientName(''); }}>↩</button>
+            </div>
+          ) : (
+            <select value={doc.clientId} onChange={(e) => { if (e.target.value === '__new') setClientMode('new'); else set({ clientId: e.target.value }); }}>
+              <option value="">—</option>
+              {clientList.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="__new">➕ Nouveau client…</option>
+            </select>
+          )}
         </div>
         <div className="field"><label>Titre</label><input value={doc.title} onChange={(e) => set({ title: e.target.value })} /></div>
         <div className="row2">
@@ -124,7 +158,11 @@ export default function Editor({ initial, library, clients }) {
           <div className="field"><label>Arrivée</label><input type="date" value={doc.startDate || ''} onChange={(e) => set({ startDate: e.target.value })} /></div>
           <div className="field"><label>Départ</label><input type="date" value={doc.endDate || ''} onChange={(e) => set({ endDate: e.target.value })} /></div>
         </div>
-        <button className="btn ghost" style={{ width: '100%' }} onClick={generateDays}>＋ Générer une journée par nuit</button>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input type="number" min="1" value={genCount} onChange={(e) => setGenCount(e.target.value)} style={{ width: 64, textAlign: 'center' }} />
+          <button className="btn ghost" style={{ flex: 1 }} onClick={generateDays}>journées — Générer</button>
+        </div>
+        <p className="muted" style={{ fontSize: 11, marginTop: 4 }}>Pré-rempli au nombre de jours réels (arrivée → départ inclus). Modifiable à la main.</p>
         <div style={{ marginTop: 12 }}><ImageInput label="Image de couverture" value={doc.heroImage} onChange={(url) => set({ heroImage: url })} /></div>
         <div className="field"><label>Introduction</label><RichInput value={doc.intro} onChange={(v) => set({ intro: v })} placeholder="A tailor-made journey…" /></div>
         <div className="daybar"><button onClick={() => addDay(false)}>＋ Journée</button><button onClick={() => addDay(true)}>＋ Destination / étape</button></div>
@@ -150,7 +188,7 @@ export default function Editor({ initial, library, clients }) {
             </div>
             <div className="hero" style={doc.heroImage ? { backgroundImage: `url('${doc.heroImage}')` } : undefined}>{doc.heroImage ? '' : 'Cover image'}</div>
           </div>
-          <div className="intro" dangerouslySetInnerHTML={{ __html: doc.intro ? mdToHtml(doc.intro) : 'A warm welcome to your bespoke journey…' }} />
+          <div className="intro" dangerouslySetInnerHTML={{ __html: doc.intro ? mdToHtml(doc.intro) : '<span style="opacity:.45">Introduction — écris-la dans « Détails » à gauche (optionnelle)</span>' }} />
           {renderDays(doc.days, handlers)}
           <div className="footer-doc">
             <div className="fl">JEWISH CONCIERGE — PARIS &amp; KO</div>
