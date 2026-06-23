@@ -89,8 +89,6 @@ a{color:inherit}
 .item .it-desc{font-size:13px;color:var(--ink-soft);line-height:1.55}
 .item .it-addr{font-size:11.5px;color:var(--gold);margin-top:5px;font-style:italic;padding-left:11px;border-left:2px solid var(--gold-soft)}
 .item .it-addr a{text-decoration:none;color:var(--gold)}
-.item img.it-img{width:150px;height:104px;object-fit:cover;border-radius:6px}
-
 /* vignette image par item — 1 clic pour téléverser */
 .it-imgslot{position:relative;width:150px;min-width:150px;height:104px;border-radius:6px;overflow:hidden;flex:none;align-self:flex-start}
 .it-imgslot img{width:100%;height:100%;object-fit:cover;display:block}
@@ -112,7 +110,6 @@ a{color:inherit}
 .rt-toolbar button:hover{border-color:var(--gold);color:var(--gold)}
 .free-img{margin:12px 0;text-align:center;cursor:pointer}
 .free-img img{max-width:100%;border-radius:8px;display:inline-block}
-.free-img .img-ph{border:1.5px dashed var(--gold-soft);border-radius:8px;padding:24px;color:#a8966c;font-size:12px}
 .transport{position:relative;display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line);cursor:pointer}
 .transport .tp-tag{font-size:9px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:#fff;background:var(--blue);border-radius:20px;padding:3px 10px;white-space:nowrap}
 .transport .tp-text{font-size:13.5px;color:var(--blue);font-weight:500}
