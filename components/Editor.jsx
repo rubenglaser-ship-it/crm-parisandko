@@ -63,11 +63,20 @@ export default function Editor({ initial, library, clients }) {
     setSaved('saved');
   }, [supabase, initial.id]);
 
+  // Autosave : debounce 2s après chaque frappe
   useEffect(() => {
     setSaved('dirty');
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => save(doc), 900);
+    timer.current = setTimeout(() => save(doc), 2000);
     return () => clearTimeout(timer.current);
+  }, [doc, save]);
+
+  // Autosave forcé toutes les 60s (filet de sécurité si le debounce a raté)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSaved((s) => { if (s === 'dirty') save(doc); return s; });
+    }, 60_000);
+    return () => clearInterval(interval);
   }, [doc, save]);
 
   // quand les dates changent, propose par défaut le nombre de jours réels (arrivée → départ inclus)
