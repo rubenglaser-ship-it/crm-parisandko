@@ -12,13 +12,17 @@ const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : 'i' + Math.random(
 const REGIONS = ['Paris', 'French Riviera', 'Provence', 'Normandy', 'Europe', 'Autre'];
 const KIND_LABEL = { hotel: 'Hôtels', activity: 'Activités & visites', restaurant: 'Restaurants' };
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const fmtEN = (iso) => { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }); };
-const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+// Dates en UTC strict (indépendant du fuseau horaire) : une date 'YYYY-MM-DD'
+// reste exactement le jour saisi. Arrivée 22 = jour 1 le 22, départ 27 = jour 6 le 27.
+const utc = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const fmtEN = (iso) => utc(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const addDays = (iso, n) => { const d = utc(iso); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 function rangeText(a, b) {
-  const da = new Date(a+'T00:00:00'), db = new Date(b+'T00:00:00');
-  const mA = MONTHS[da.getMonth()], mB = MONTHS[db.getMonth()];
-  if (da.getMonth()===db.getMonth() && da.getFullYear()===db.getFullYear()) return `${mA} ${da.getDate()} – ${db.getDate()}, ${db.getFullYear()}`;
-  return `${mA} ${da.getDate()} – ${mB} ${db.getDate()}, ${db.getFullYear()}`;
+  const da = utc(a), db = utc(b);
+  const mA = MONTHS[da.getUTCMonth()], mB = MONTHS[db.getUTCMonth()];
+  if (da.getUTCMonth() === db.getUTCMonth() && da.getUTCFullYear() === db.getUTCFullYear())
+    return `${mA} ${da.getUTCDate()} – ${db.getUTCDate()}, ${db.getUTCFullYear()}`;
+  return `${mA} ${da.getUTCDate()} – ${mB} ${db.getUTCDate()}, ${db.getUTCFullYear()}`;
 }
 export const fmtAddr = (s) => (s || '').replace(/\s+/g, ' ').replace(/\s*,\s*/g, ', ').replace(/^[\s,]+|[\s,]+$/g, '').trim();
 const isPH = (t) => /^(new day|new item|activity|)$/i.test((t || '').trim());
@@ -51,8 +55,12 @@ export default function Editor({ initial, library, clients }) {
       start_date: d.startDate || null, end_date: d.endDate || null, hero_image: d.heroImage,
       intro: d.intro, client_id: d.clientId || null, status: d.status, days: d.days,
     };
-    const { error } = await supabase.from('itineraries').update(payload).eq('id', initial.id);
-    setSaved(error ? 'error' : 'saved');
+    // .select() pour VÉRIFIER que la ligne a bien été modifiée. Sous RLS, une session
+    // invalide ne renvoie PAS d'erreur mais affecte 0 ligne → on le détecte explicitement.
+    const { data, error } = await supabase.from('itineraries').update(payload).eq('id', initial.id).select('id');
+    if (error) { console.error('[autosave] erreur:', error); setSaved('error'); return; }
+    if (!data || data.length === 0) { console.warn('[autosave] 0 ligne modifiée (session/RLS ?)'); setSaved('blocked'); return; }
+    setSaved('saved');
   }, [supabase, initial.id]);
 
   useEffect(() => {
@@ -139,6 +147,25 @@ export default function Editor({ initial, library, clients }) {
     setPicker(null);
   }
 
+  // #2 — enregistre une activité (libre ou éditée) dans la bibliothèque réutilisable.
+  // Ville reprise de la destination de la journée (auto) → région dérivée.
+  async function saveActivityToLibrary(item, dest) {
+    const title = (item.title || '').trim();
+    if (!title || /^(new item|activity)$/i.test(title)) { alert('Donne d\'abord un titre à l\'activité.'); return; }
+    const payload = {
+      kind: 'activity', title,
+      description: item.description || '',
+      address: fmtAddr(item.address || ''),
+      meal: item.meal || '',
+      city: dest || '',
+      region: regionOf(dest || ''),
+    };
+    const { data, error } = await supabase.from('library_items').insert(payload).select('id');
+    if (error) { alert('Échec de l\'enregistrement en bibliothèque : ' + error.message); return; }
+    if (!data || data.length === 0) { alert('Non enregistré : session/permissions (RLS). Vérifie la connexion / la config Supabase.'); return; }
+    alert('Activité ajoutée à la bibliothèque ✓' + (dest ? ` (région : ${regionOf(dest)})` : ' (région : Autre)'));
+  }
+
   const handlers = { moveDay, removeDay, setDest, setHotel, openPicker: (kind, dayId) => setPicker({ kind, dayId }), addItem, openItem: (di, ii) => setItemEdit({ di, ii }), moveItem, removeItem, updateItem };
 
   return (
@@ -146,7 +173,13 @@ export default function Editor({ initial, library, clients }) {
       <div className="editor-side no-print">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Détails</strong>
-          <span className="muted" style={{ fontSize: 11 }}>{saved === 'saving' ? 'Enregistrement…' : saved === 'error' ? 'Erreur' : saved === 'dirty' ? '…' : 'Enregistré ✓'}</span>
+          <span style={{ fontSize: 11, fontWeight: (saved === 'error' || saved === 'blocked') ? 600 : 400, color: (saved === 'error' || saved === 'blocked') ? '#a33' : 'var(--ink-soft)' }}>
+            {saved === 'saving' ? 'Enregistrement…'
+              : saved === 'blocked' ? '⚠ Non enregistré (session ?)'
+              : saved === 'error' ? '⚠ Erreur d\'enregistrement'
+              : saved === 'dirty' ? '…'
+              : 'Enregistré ✓'}
+          </span>
         </div>
         <div className="field"><label>Client</label>
           {clientMode === 'new' ? (
@@ -219,6 +252,8 @@ export default function Editor({ initial, library, clients }) {
         regionGuess={regionOf((doc.days.find((d) => d.id === picker.dayId) || {}).dest || '')}
         onPick={(e) => insertFromLib(picker.dayId, e)} onClose={() => setPicker(null)} />}
       {itemEdit && <ItemModal it={doc.days[itemEdit.di].items[itemEdit.ii]}
+        dayDest={doc.days[itemEdit.di]?.dest || ''}
+        onSaveToLibrary={(v) => saveActivityToLibrary(v, doc.days[itemEdit.di]?.dest || '')}
         onSave={(patch) => { updateItem(itemEdit.di, itemEdit.ii, patch); setItemEdit(null); }}
         onRemove={() => { removeItem(itemEdit.di, itemEdit.ii); setItemEdit(null); }}
         onClose={() => setItemEdit(null)} />}
@@ -362,7 +397,7 @@ function Picker({ library, kind, regionGuess, onPick, onClose }) {
   );
 }
 
-function ItemModal({ it, onSave, onRemove, onClose }) {
+function ItemModal({ it, onSave, onRemove, onClose, onSaveToLibrary, dayDest }) {
   const [v, setV] = useState({ ...it });
   const up = (k) => (e) => setV({ ...v, [k]: e.target.value });
   const type = v.type || 'activity';
@@ -408,6 +443,11 @@ function ItemModal({ it, onSave, onRemove, onClose }) {
           <div className="field"><label>Description</label><RichInput value={v.description || ''} onChange={(t) => setV({ ...v, description: t })} /></div>
           <div className="field"><label>Adresse</label><input value={v.address || ''} onChange={up('address')} onBlur={(e) => setV({ ...v, address: fmtAddr(e.target.value) })} /></div>
           <ImageInput label="Image (optionnel)" value={v.image || ''} onChange={(url) => setV({ ...v, image: url })} />
+          {onSaveToLibrary && (
+            <button className="btn ghost" style={{ width: '100%', marginTop: 4 }} onClick={() => onSaveToLibrary({ ...v, address: fmtAddr(v.address || '') })}>
+              ★ Enregistrer cette activité dans la bibliothèque{dayDest ? ` (${dayDest})` : ''}
+            </button>
+          )}
         </>)}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14 }}>
