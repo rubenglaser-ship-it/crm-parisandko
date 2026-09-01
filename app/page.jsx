@@ -8,8 +8,7 @@ export default async function Dashboard() {
   const supabase = createClient();
   const { data: itineraries } = await supabase
     .from('itineraries')
-    .select('id,title,city,date_range,status,updated_at,days,client_id,is_template')
-    .or('is_template.is.null,is_template.eq.false')
+    .select('id,title,city,date_range,status,updated_at,days,client_id')
     .order('updated_at', { ascending: false });
 
   const items = (itineraries || []).map((it) => {
